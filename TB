@@ -1,0 +1,48 @@
+-- Instructions: To enable the triggerbot, press E. To change the keybind, go to instruction 2.
+
+-- // Notification \\ --
+
+game:GetService("StarterGui"):SetCore("SendNotification", {
+	Title = "TriggerBot";
+	Text = "Join .gg/AngelCheats";
+	Duration = 2; -- Notification duration (2 seconds)
+})
+
+-- // Variables \\ --
+
+_G.triggerbot = false
+
+local player = game:GetService("Players").LocalPlayer
+local mouse = player:GetMouse()
+
+local Clicked = false
+
+-- // Side Scripts \\ --
+
+game:GetService("UserInputService").InputBegan:connect(function(Input, GameProcessedEvent)
+	if GameProcessedEvent then
+		return
+	end
+
+	if Input.KeyCode == Enum.KeyCode.T then -- Instruction 2: To change the keybind, change the "Enum.KeyCode.E" to "Enum.KeyCode.(TheKey)" for changing your keybind.
+		_G.triggerbot = not _G.triggerbot
+	end
+end)
+
+-- // Main Scripts \\ --
+
+game:GetService("RunService").RenderStepped:Connect(function()
+	if _G.triggerbot and mouse.Target and mouse.Target.Parent then
+		local humanoid = mouse.Target.Parent:FindFirstChildOfClass("Humanoid") or mouse.Target.Parent.Parent:FindFirstChildOfClass("Humanoid")
+		local head = mouse.Target.Parent:FindFirstChild("Head") or mouse.Target.Parent.Parent:FindFirstChild("Head")
+
+		if humanoid and head and mouse.Target == head and humanoid.Health > 0 and mouse.Target.Parent.Name ~= player.Name then
+			mouse1press()
+			Clicked = false
+		elseif not Clicked then
+			mouse1release()
+		end
+	else
+		Clicked = true
+	end
+end)
