@@ -1,0 +1,82 @@
+-- Variables
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Lock-on toggle state
+local lockOnEnabled = false
+local lockedPlayer = nil
+
+-- Helper function to calculate distance between mouse and player
+local function getDistanceFromMouse(target)
+    local character = target.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(character.HumanoidRootPart.Position)
+        if onScreen then
+            local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+            local targetPos = Vector2.new(screenPos.X, screenPos.Y)
+            return (mousePos - targetPos).Magnitude, onScreen
+        end
+    end
+    return math.huge, false -- Return a large number if the player is invalid or off-screen
+end
+
+-- Function to find the nearest player to the mouse
+local function findNearestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    local isVisible = false
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance, visible = getDistanceFromMouse(player)
+            if distance < shortestDistance and visible then
+                closestPlayer = player
+                shortestDistance = distance
+                isVisible = true
+            end
+        end
+    end
+
+    return closestPlayer, isVisible
+end
+
+-- Function to lock onto the nearest player (or the locked player if already locked)
+local function lockOntoPlayer(target)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        local camera = workspace.CurrentCamera
+        local targetPosition = target.Character.HumanoidRootPart.Position
+        camera.CFrame = CFrame.new(camera.CFrame.Position, targetPosition)
+    end
+end
+
+-- Keybind to toggle lock-on state
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.Q then
+        if not lockOnEnabled then
+            local target, isVisible = findNearestPlayer()
+            if target and isVisible then
+                lockedPlayer = target
+                lockOnEnabled = true
+                print("Lock-on enabled to " .. lockedPlayer.Name)
+            else
+                print("No visible player to lock onto.")
+            end
+        else
+            lockOnEnabled = false
+            lockedPlayer = nil
+            print("Lock-on disabled")
+        end
+    end
+end)
+
+-- Update loop to manage lock-on when enabled
+RunService.RenderStepped:Connect(function()
+    if lockOnEnabled and lockedPlayer then
+        lockOntoPlayer(lockedPlayer)
+    end
+end)
